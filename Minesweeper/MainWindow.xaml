@@ -1,0 +1,24 @@
+﻿<Window x:Class="Minesweeper.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Minesweeper"
+        mc:Ignorable="d"
+        Title="Сапер" Height="Auto" Width="Auto">
+
+    <Grid>
+        <Menu Height="25" VerticalAlignment="Top">
+            <MenuItem Header="Игра">
+                <MenuItem Header="Занова" Click="MenuItem_Reload"></MenuItem>
+                <Separator />
+                <MenuItem Header="Легко (поле 9х9)" Click="MenuItem_Easy"></MenuItem>
+                <MenuItem Header="Средне (поле 16х16)" Click="MenuItem_Normal"></MenuItem>
+                <MenuItem Header="Сложно (поле 30х30)" Click="MenuItem_Hard"></MenuItem>
+                <MenuItem Header="Свое"  Click="MenuItem_Custom"></MenuItem>
+                <Separator />
+                <MenuItem Header="Выход" Click="MenuItem_Exit"></MenuItem>
+            </MenuItem>
+        </Menu>
+    </Grid>
+</Window>
