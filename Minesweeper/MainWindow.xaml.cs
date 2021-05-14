@@ -20,16 +20,18 @@ namespace Minesweeper
     /// </summary>
     public partial class MainWindow : Window
     {
-        public int field = 9;
-        public int bombs = 9;
-
+        private int field = 9;
+        private int bombs = 9;
+        private int defused;
+        private int needOpenFields;
         public MainWindow()
         {
             InitializeComponent();
         }
 
-        public bool StarGame(int size, int bomb)
+        private void StarGame(int size, int bomb)
         {
+            defused = 0;
             Random rand = new Random();
             List<List<ButtonField>> rows = new List<List<ButtonField>>();
             for (int i = 0; i < size; i++)
@@ -40,19 +42,20 @@ namespace Minesweeper
                     ButtonField button = new ButtonField();
                     button.Width = 20;
                     button.Height = 20;
-                    button.x = j;
-                    button.y = i;
+                    button.x = i;
+                    button.y = j;
                     button.Click += FieldClickEvent;
                     button.MouseRightButtonUp += FieldLockEvent;
-                    if (rand.Next(0, size*size) < bomb)
+                    if (defused < bomb && rand.Next(0, size*size) < bomb)
                     {
                         button.isBomb = true;
+                        defused++;
                     }
                     rows[i].Add(button);
                 }
             }
             BombBox.ItemsSource = rows;
-            return true;
+            needOpenFields = (size * size) - defused;
         }
 
         class ButtonField:Button
@@ -67,15 +70,20 @@ namespace Minesweeper
         private void FieldLockEvent(object sender, MouseButtonEventArgs e)
         {
             if(((ButtonField)sender).isOpen) return;
+
             ((ButtonField)sender).isLock = !((ButtonField)sender).isLock;
+
             if(((ButtonField)sender).isLock)
             {
                 ((ButtonField)sender).Background = new SolidColorBrush(Color.FromArgb(255, 255, 255, 0));
+                if(((ButtonField)sender).isBomb) defused--;
             }
             else
             {
                 ((ButtonField)sender).Background = new SolidColorBrush(Color.FromArgb(255, 221, 221, 221));
+                if (((ButtonField)sender).isBomb) defused++;
             }
+            CheckWinGame();
         }
 
         private void FieldClickEvent(object sender, RoutedEventArgs e)
@@ -87,13 +95,13 @@ namespace Minesweeper
             }
             else
             {
-                ClearField(sender);
+                CountNearbyBombs((ButtonField)sender);
             }
+            CheckWinGame();
         }
 
         private void LoseGame(object sender)
         {
-            
             List<List<ButtonField>> rows = (List<List<ButtonField>>)BombBox.ItemsSource;
             foreach (List<ButtonField> cols in rows)
             {
@@ -109,25 +117,76 @@ namespace Minesweeper
                 }
             }
             ((ButtonField)sender).Background = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0));
-            BombBox.Background = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0));
-            //(ButtonField)sender).isOpen = true;
+            MessageBox.Show("Вы проиграли");
         }
-        private void ClearField(object sender)
+
+        private void CheckWinGame()
         {
-            ((ButtonField)sender).isOpen = true;
-            ((ButtonField)sender).Background = new SolidColorBrush(Color.FromArgb(255, 0, 255, 0));
-            ((ButtonField)sender).Content = CountNearbyBombs(sender);
+            if(needOpenFields == 0 && defused == 0)
+            {
+                List<List<ButtonField>> rows = (List<List<ButtonField>>)BombBox.ItemsSource;
+                foreach (List<ButtonField> cols in rows)
+                {
+                    foreach (ButtonField btn in cols)
+                    {
+                        btn.Click -= FieldClickEvent;
+                        btn.MouseRightButtonUp -= FieldLockEvent;
+                        if (btn.isBomb)
+                        {
+                            btn.Content = "*";
+                            btn.Background = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0));
+                        }
+                    }
+                }
+                MessageBox.Show("Вы выиграли!");
+            }
         }
-        private int CountNearbyBombs(object sender)
+        private void CountNearbyBombs(ButtonField btn)
         {
-            return 0;
+            int count = 0;
+            int x = btn.x;
+            int y = btn.y;
+            btn.Background = new SolidColorBrush(Color.FromArgb(255, 0, 155, 0));
+            btn.isOpen = true;
+            needOpenFields--;
+
+            List<List<ButtonField>> fields = (List<List<ButtonField>>)BombBox.ItemsSource;
+
+            if (FieldExist(x, y - 1) && fields[x][y - 1].isBomb) count++;
+            if (FieldExist(x, y + 1) && fields[x][y + 1].isBomb) count++;
+
+            if (FieldExist(x - 1, y) && fields[x - 1][y].isBomb) count++;
+            if (FieldExist(x + 1, y) && fields[x + 1][y].isBomb) count++;
+
+            if (FieldExist(x - 1, y - 1) && fields[x - 1][y - 1].isBomb) count++;
+            if (FieldExist(x - 1, y + 1) && fields[x - 1][y + 1].isBomb) count++;
+            
+            if (FieldExist(x + 1, y + 1) && fields[x + 1][y + 1].isBomb) count++;
+            if (FieldExist(x + 1, y - 1) && fields[x + 1][y - 1].isBomb) count++;
+            
+            if (count != 0) btn.Content = count;
+            else
+            {
+                if (FieldExist(x - 1, y) && !fields[x - 1][y].isOpen) CountNearbyBombs(fields[x - 1][y]);
+                if (FieldExist(x - 1, y - 1) && !fields[x - 1][y - 1].isOpen) CountNearbyBombs(fields[x - 1][y - 1]);
+                if (FieldExist(x - 1, y + 1) && !fields[x - 1][y + 1].isOpen) CountNearbyBombs(fields[x - 1][y + 1]);
+
+                if (FieldExist(x + 1, y) && !fields[x + 1][y].isOpen) CountNearbyBombs(fields[x + 1][y]);
+                if (FieldExist(x + 1, y + 1) && !fields[x + 1][y + 1].isOpen) CountNearbyBombs(fields[x + 1][y + 1]);
+                if (FieldExist(x + 1, y - 1) && !fields[x + 1][y - 1].isOpen) CountNearbyBombs(fields[x + 1][y - 1]);
+
+                if (FieldExist(x, y - 1) && !fields[x][y - 1].isOpen) CountNearbyBombs(fields[x][y - 1]);
+                if (FieldExist(x, y + 1) && !fields[x][y + 1].isOpen) CountNearbyBombs(fields[x][y + 1]);
+            }
+        }
+        private bool FieldExist(int x,int y)
+        {
+            return 0 <= x && x < field && 0 <= y && y < field;
         }
 
         private void MenuItem_Reload(object sender, RoutedEventArgs e)
         {
-
-            MenuItem menuItem = (MenuItem)sender;
-            MessageBox.Show(menuItem.Header.ToString());
+            StarGame(field, bombs);
         }
 
         private void MenuItem_Easy(object sender, RoutedEventArgs e)
