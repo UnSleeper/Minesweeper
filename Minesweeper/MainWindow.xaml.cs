@@ -24,6 +24,7 @@ namespace Minesweeper
         private int bombs = 9;
         private int defused;
         private int needOpenFields;
+        bool firstClick;
         public MainWindow()
         {
             InitializeComponent();
@@ -31,6 +32,7 @@ namespace Minesweeper
 
         private void StarGame(int size, int bomb)
         {
+            firstClick = true;
             defused = 0;
             Random rand = new Random();
             List<List<ButtonField>> rows = new List<List<ButtonField>>();
@@ -89,6 +91,12 @@ namespace Minesweeper
         private void FieldClickEvent(object sender, RoutedEventArgs e)
         {
             if (((ButtonField)sender).isLock) return;
+            if (firstClick && ((ButtonField)sender).isBomb)
+            {
+                ((ButtonField)sender).isBomb = false;
+                defused--;
+                needOpenFields++;
+            }
             if (((ButtonField)sender).isBomb)
             {
                 LoseGame(sender);
@@ -97,6 +105,7 @@ namespace Minesweeper
             {
                 CountNearbyBombs((ButtonField)sender);
             }
+            firstClick = false;
             CheckWinGame();
         }
 
@@ -214,14 +223,12 @@ namespace Minesweeper
         {
             CustomGameWindow customGameWindow = new CustomGameWindow();
 
-            MessageBox.Show(customGameWindow.fieldBox.ToString());
-            MessageBox.Show(customGameWindow.bombBox.ToString());
-            /*if (customGameWindow.ShowDialog() == true)
+            if (customGameWindow.ShowDialog() == true)
             {
-                field = Int16.Parse(customGameWindow.fieldBox.ToString());
-                bombs = Int16.Parse(customGameWindow.bombBox.ToString());
-            }*/
-
+                field = Int16.Parse(customGameWindow.fieldBox.Text);
+                bombs = Int16.Parse(customGameWindow.bombBox.Text);
+                StarGame(field, bombs);
+            }
         }
         private void MenuItem_Exit(object sender, RoutedEventArgs e)
         {
